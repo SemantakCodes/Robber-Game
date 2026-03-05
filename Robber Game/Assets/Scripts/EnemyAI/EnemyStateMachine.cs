@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.AI;
 
 [RequireComponent(typeof(Rigidbody))]
 public class EnemyStateMachine : MonoBehaviour
@@ -6,6 +7,7 @@ public class EnemyStateMachine : MonoBehaviour
     [Header("References")]
     public Transform player;
     public Transform[] patrolPoints;
+    public NavMeshAgent aiAgent;
 
     [Header("Movement")]
     public float moveSpeed = 3f;

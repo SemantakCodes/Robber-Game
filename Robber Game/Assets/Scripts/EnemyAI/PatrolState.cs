@@ -8,30 +8,44 @@ public class PatrolState : EnemyStates
 
     public override void Enter()
     {
-        currentPoint = 0;
+        currentPoint = Random.Range(0,enemy.patrolPoints.Length);
     }
 
     public override void Update()
     {
-        Transform target = enemy.patrolPoints[currentPoint];
-
-        // Move toward patrol point
-        Vector3 dir = (target.position - enemy.transform.position).normalized;
-        enemy.rb.linearVelocity = new Vector3(dir.x * enemy.moveSpeed, enemy.rb.linearVelocity.y, dir.z * enemy.moveSpeed);
-
-        // If close to patrol point → go to next
-        if (Vector3.Distance(enemy.transform.position, target.position) < 1f)
-        {
-            currentPoint++;
-
-            if (currentPoint >= enemy.patrolPoints.Length)
-                currentPoint = 0;
-        }
-
-        // Detect player
-        if (enemy.DistanceToPlayer() < enemy.chaseDistance)
+        Patrol();
+        if (PlayerCheck())
         {
             enemy.ChangeState(enemy.chaseState);
+        }
+    }
+
+    private void Patrol()
+    {
+        Transform target = enemy.patrolPoints[currentPoint];
+        Vector3 targetPosition = target.position;
+        enemy.aiAgent.SetDestination(targetPosition);
+
+        if(enemy.aiAgent.remainingDistance < 0.5f)
+        {
+            //Change currentPoint
+            currentPoint =  Random.Range(0 , enemy.patrolPoints.Length);
+            target = enemy.patrolPoints[currentPoint];
+            targetPosition = target.position;
+            enemy.aiAgent.SetDestination(targetPosition);
+        }
+    }
+
+    private bool PlayerCheck()
+    {
+        RaycastHit hit;
+        if(Physics.Raycast(enemy.transform.position, Vector3.forward, out hit, enemy.chaseDistance) && hit.collider.CompareTag("Player"))
+        {
+            return true;
+        }
+        else
+        {
+            return false;
         }
     }
 }
