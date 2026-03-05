@@ -1,3 +1,4 @@
+using System.Threading;
 using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
@@ -22,6 +23,7 @@ public class PlayerMovement : MonoBehaviour
     private Vector3 velocity;
     private float xRotation = 0f;
 
+
     void Start()
     {
         controller = GetComponent<CharacterController>();
@@ -31,7 +33,6 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
-
         Move();
         MouseLook();
     }
