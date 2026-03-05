@@ -1,90 +1,126 @@
 using UnityEngine;
 
+[RequireComponent(typeof(Rigidbody))]
 public class PlayerMovement : MonoBehaviour
 {
     [Header("Movement")]
-    public float moveSpeed = 6f;
-    public float jumpHeight = 1.5f;
-    public float gravity = -9.81f;
+    public float walkSpeed = 5f;
+    public float sprintSpeed = 9f;
+    public float acceleration = 10f;
+    public float groundDamping = 5f;
 
-    [Header("Sprint")]
-    public float sprintSpeed = 10f;
-    public float maxSprintStamina = 10f;
-    public float currentSprintStamina;
-    public float sprintDrainRate = 2f;
-    public float sprintRegenRate = 1f;
+    [Header("Stamina")]
+    public float maxStamina = 100f;
+    public float staminaDrainRate = 15f;
+    public float staminaRegenRate = 10f;
+    private float currentStamina;
 
-    [Header("Mouse Look")]
-    public float mouseSensitivity = 100f;
-    public Transform playerCamera;
-
-    private CharacterController controller;
-    private Vector3 velocity;
+    [Header("Look & Camera")]
+    public Transform cameraRoot;
+    public float mouseSensitivity = 2f;
     private float xRotation = 0f;
+
+    [Header("Interaction (Future Proofing)")]
+    public float interactRange = 3f;
+    public LayerMask interactableLayer;
+
+    private Rigidbody rb;
+    private Vector2 moveInput;
+    private bool isSprinting;
 
     void Start()
     {
-        controller = GetComponent<CharacterController>();
+        rb = GetComponent<Rigidbody>();
+        currentStamina = maxStamina;
+
+        // Lock cursor to the center of the screen
         Cursor.lockState = CursorLockMode.Locked;
-        currentSprintStamina = maxSprintStamina;
+        Cursor.visible = false;
     }
 
     void Update()
     {
-        print("is grounded" + controller.isGrounded);
-        print("pressed" + Input.GetKeyDown(KeyCode.Space));
-        
-        Move();
-        MouseLook();
+        HandleLook();
+        HandleInput();
+        HandleStamina();
+        // CheckInteraction();
     }
 
-    void Move()
+    void FixedUpdate()
     {
-        float x = Input.GetAxis("Horizontal");
-        float z = Input.GetAxis("Vertical");
+        MovePlayer();
+        // Unity 6 uses linearDamping instead of drag
+        rb.linearDamping = groundDamping; 
+    }
 
-        // Check if grounded
-        if (controller.isGrounded && velocity.y < 0)
+    private void HandleLook()
+    {
+        float mouseX = Input.GetAxisRaw("Mouse X") * mouseSensitivity;
+        float mouseY = Input.GetAxisRaw("Mouse Y") * mouseSensitivity;
+
+        // Vertical look (Pitch) - applied to the CameraRoot
+        xRotation -= mouseY;
+        xRotation = Mathf.Clamp(xRotation, -90f, 90f);
+        cameraRoot.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
+
+        // Horizontal look (Yaw) - applied to the whole Player body
+        transform.Rotate(Vector3.up * mouseX);
+    }
+
+    private void HandleInput()
+    {
+        moveInput.x = Input.GetAxisRaw("Horizontal");
+        moveInput.y = Input.GetAxisRaw("Vertical");
+
+        // Allow sprinting only if we have stamina and are moving forward
+        isSprinting = Input.GetKey(KeyCode.LeftShift) && currentStamina > 0f && moveInput.y > 0f;
+    }
+
+    private void HandleStamina()
+    {
+        if (isSprinting && moveInput.magnitude > 0.1f)
         {
-            velocity.y = -2f;
-        }
-
-        // Jump
-        if (Input.GetKeyDown(KeyCode.Space) && controller.isGrounded)
-        {
-            velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
-        }
-
-        // Gravity
-        velocity.y += gravity * Time.deltaTime;
-
-        // Sprint handling
-        float currentMoveSpeed = moveSpeed;
-        if (Input.GetKey(KeyCode.LeftShift) && currentSprintStamina > 0)
-        {
-            currentSprintStamina -= sprintDrainRate * Time.deltaTime;
-            currentMoveSpeed = sprintSpeed;
+            currentStamina -= staminaDrainRate * Time.deltaTime;
+            currentStamina = Mathf.Max(currentStamina, 0f);
         }
         else
         {
-            currentSprintStamina = Mathf.Min(currentSprintStamina + sprintRegenRate * Time.deltaTime, maxSprintStamina);
+            currentStamina += staminaRegenRate * Time.deltaTime;
+            currentStamina = Mathf.Min(currentStamina, maxStamina);
         }
-
-        // Combine horizontal and vertical movement in ONE call
-        Vector3 move = (transform.right * x + transform.forward * z) * currentMoveSpeed;
-        move += Vector3.up * velocity.y;
-        controller.Move(move * Time.deltaTime);
     }
 
-    void MouseLook()
+    private void MovePlayer()
     {
-        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity * Time.deltaTime;
-        float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity * Time.deltaTime;
+        // Calculate movement direction
+        Vector3 moveDir = transform.forward * moveInput.y + transform.right * moveInput.x;
+        float currentSpeed = isSprinting ? sprintSpeed : walkSpeed;
 
-        xRotation -= mouseY;
-        xRotation = Mathf.Clamp(xRotation, -90f, 90f);
+        Vector3 targetVelocity = moveDir.normalized * currentSpeed;
 
-        playerCamera.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
-        transform.Rotate(Vector3.up * mouseX);
+        // Unity 6 uses linearVelocity instead of velocity
+        Vector3 velocityDiff = targetVelocity - new Vector3(rb.linearVelocity.x, 0, rb.linearVelocity.z);
+        
+        // Smoothly accelerate using ForceMode.VelocityChange
+        rb.AddForce(velocityDiff * acceleration * Time.fixedDeltaTime, ForceMode.VelocityChange);
     }
+
+    // private void CheckInteraction()
+    // {
+    //     // Fire a raycast from the camera when 'E' is pressed
+    //     if (Input.GetKeyDown(KeyCode.E))
+    //     {
+    //         Ray ray = new Ray(Camera.main.transform.position, Camera.main.transform.forward);
+            
+    //         if (Physics.Raycast(ray, out RaycastHit hit, interactRange, interactableLayer))
+    //         {
+    //             // Look for the IInteractable interface
+    //             IInteractable interactable = hit.collider.GetComponent<IInteractable>();
+    //             if (interactable != null)
+    //             {
+    //                 interactable.Interact();
+    //             }
+    //         }
+    //     }
+    // }
 }

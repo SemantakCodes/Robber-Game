@@ -15,6 +15,7 @@ public class ChaseState : EnemyStates
         {
             enemy.ChangeState(enemy.restState);
         }
+        
     }
 
     private void Chase()
