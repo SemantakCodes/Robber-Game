@@ -1,119 +1,90 @@
 using UnityEngine;
 
-[RequireComponent(typeof(Rigidbody))]
-public class PlayerMovement : MonoBehaviour
+public class FPSController : MonoBehaviour
 {
     [Header("Movement")]
     public float moveSpeed = 6f;
-    public float jumpForce = 5f;
+    public float jumpHeight = 1.5f;
+    public float gravity = -9.81f;
+
+    [Header("Sprint")]
+    public float sprintSpeed = 10f;
+    public float maxSprintStamina = 10f;
+    public float currentSprintStamina;
+    public float sprintDrainRate = 2f;
+    public float sprintRegenRate = 1f;
 
     [Header("Mouse Look")]
     public float mouseSensitivity = 100f;
-    public Transform cameraHolder; // Camera assign garannu parcha
+    public Transform playerCamera;
 
-    [Header("Ground Check")]
-    public float groundCheckDistance = 0.2f;
-    public LayerMask groundLayer;
-
-    private Rigidbody rb;
+    private CharacterController controller;
+    private Vector3 velocity;
     private float xRotation = 0f;
-    private bool isGrounded;
-
-    private float moveX;
-    private float moveZ;
-
-    void Awake()
-    {
-        rb = GetComponent<Rigidbody>();
-        rb.freezeRotation = true; // rotation freeze garne, physics le rotate nagaros vanera yk collision n stuff
-    }
 
     void Start()
     {
-        Cursor.lockState = CursorLockMode.Locked; // fps ma cursor lock garne
+        controller = GetComponent<CharacterController>();
+        Cursor.lockState = CursorLockMode.Locked;
+        currentSprintStamina = maxSprintStamina;
     }
 
     void Update()
     {
-        HandleMouseLook();
-        HandleInput();
-        CheckGround();
+        print("is grounded" + controller.isGrounded);
+        print("pressed" + Input.GetKeyDown(KeyCode.Space));
+        
+        Move();
+        MouseLook();
     }
 
-    void FixedUpdate()
+    void Move()
     {
-        HandleMovement();
-    }
+        float x = Input.GetAxis("Horizontal");
+        float z = Input.GetAxis("Vertical");
 
-    // ---------------------------------
-    // INPUT
-    // ---------------------------------
-
-    void HandleInput()
-    {
-        moveX = Input.GetAxisRaw("Horizontal");
-        moveZ = Input.GetAxisRaw("Vertical");
-
-        if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
+        // Check if grounded
+        if (controller.isGrounded && velocity.y < 0)
         {
-            Jump();
+            velocity.y = -2f;
         }
+
+        // Jump
+        if (Input.GetKeyDown(KeyCode.Space) && controller.isGrounded)
+        {
+            velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+        }
+
+        // Gravity
+        velocity.y += gravity * Time.deltaTime;
+
+        // Sprint handling
+        float currentMoveSpeed = moveSpeed;
+        if (Input.GetKey(KeyCode.LeftShift) && currentSprintStamina > 0)
+        {
+            currentSprintStamina -= sprintDrainRate * Time.deltaTime;
+            currentMoveSpeed = sprintSpeed;
+        }
+        else
+        {
+            currentSprintStamina = Mathf.Min(currentSprintStamina + sprintRegenRate * Time.deltaTime, maxSprintStamina);
+        }
+
+        // Combine horizontal and vertical movement in ONE call
+        Vector3 move = (transform.right * x + transform.forward * z) * currentMoveSpeed;
+        move += Vector3.up * velocity.y;
+        controller.Move(move * Time.deltaTime);
     }
 
-    // ---------------------------------
-    // MOVEMENT (Physics based)
-    // ---------------------------------
-
-    void HandleMovement()
-    {
-        // Calculate movement direction relative to player (bujhyeu ni?)
-        Vector3 moveDirection = transform.right * moveX + transform.forward * moveZ;
-
-        // Keep current Y velocity (important for gravity) (newtoooon)
-        Vector3 velocity = moveDirection.normalized * moveSpeed;
-        velocity.y = rb.linearVelocity.y;
-
-        rb.linearVelocity = velocity;
-    }
-
-    void Jump()
-    {
-        // Reset vertical velocity before jump (cleaner jump) (yo le jump ko height consistent banauxa, otherwise jump force apply garda velocity already downwards cha bhane jump height kam hunchha)
-        rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
-        rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
-    }
-
-    // ---------------------------------
-    // MOUSE LOOK
-    // ---------------------------------
-
-    void HandleMouseLook()
+    void MouseLook()
     {
         float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity * Time.deltaTime;
         float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity * Time.deltaTime;
 
-        // Vertical camera rotation (yo le camera lai up down ghumauxa, player body lai ghumauxa ni, but camera holder lai matra up down ghumauxa)
         xRotation -= mouseY;
         xRotation = Mathf.Clamp(xRotation, -90f, 90f);
 
-        cameraHolder.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
-
-        // Horizontal player rotation (yo le player body lai left right ghumauxa, camera holder lai ghumauxa ni, but camera holder lai matra up down ghumauxa)
+        playerCamera.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
         transform.Rotate(Vector3.up * mouseX);
-    }
-
-    // ---------------------------------
-    // GROUND CHECK
-    // ---------------------------------
-
-    void CheckGround()
-    {
-        // Raycast downward to check if grounded (yo le player ko position bata thap distance samma raycast garera ground layer ma hit cha ki nai check garauxa)
-        isGrounded = Physics.Raycast(
-            transform.position,
-            Vector3.down,
-            groundCheckDistance + 0.1f,
-            groundLayer
-        );
     }
 }
