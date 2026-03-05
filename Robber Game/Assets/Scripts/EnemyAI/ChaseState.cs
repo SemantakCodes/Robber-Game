@@ -2,25 +2,23 @@ using UnityEngine;
 
 public class ChaseState : EnemyStates
 {
-    public ChaseState(EnemyStateMachine stateMachine)
-        : base(stateMachine) { }
-
-    public override void Enter()
-    {
-        // Start chasing
-    }
+    public ChaseState(EnemyStateMachine enemy) : base(enemy) { }
 
     public override void Update()
     {
-        // Chase logic
+        Vector3 dir = (enemy.player.position - enemy.transform.position).normalized;
 
-        // Example:
-        // if (lostPlayer)
-        //     stateMachine.ChangeState(stateMachine.RestState);
+        enemy.rb.linearVelocity = new Vector3(dir.x * enemy.chaseSpeed, enemy.rb.linearVelocity.y, dir.z * enemy.chaseSpeed);
+
+        // If player escapes
+        if (enemy.DistanceToPlayer() > enemy.chaseDistance + 3f)
+        {
+            enemy.ChangeState(enemy.restState);
+        }
     }
 
-    public override void Exit()
+    private void Chase()
     {
-        // Stop chasing
+        
     }
 }

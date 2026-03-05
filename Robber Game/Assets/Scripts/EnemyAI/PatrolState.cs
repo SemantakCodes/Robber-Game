@@ -2,25 +2,50 @@ using UnityEngine;
 
 public class PatrolState : EnemyStates
 {
-    public PatrolState(EnemyStateMachine stateMachine)
-        : base(stateMachine) { }
+    int currentPoint;
+
+    public PatrolState(EnemyStateMachine enemy) : base(enemy) { }
 
     public override void Enter()
     {
-        // Start patrolling
+        currentPoint = Random.Range(0,enemy.patrolPoints.Length);
     }
 
     public override void Update()
     {
-        // Patrol logic here
-
-        // Example transition:
-        // if (playerDetected)
-        //     stateMachine.ChangeState(stateMachine.ChaseState);
+        Patrol();
+        if (PlayerCheck())
+        {
+            enemy.ChangeState(enemy.chaseState);
+        }
     }
 
-    public override void Exit()
+    private void Patrol()
     {
-        // Cleanup patrol
+        Transform target = enemy.patrolPoints[currentPoint];
+        Vector3 targetPosition = target.position;
+        enemy.aiAgent.SetDestination(targetPosition);
+
+        if(enemy.aiAgent.remainingDistance < 0.5f)
+        {
+            //Change currentPoint
+            currentPoint =  Random.Range(0 , enemy.patrolPoints.Length);
+            target = enemy.patrolPoints[currentPoint];
+            targetPosition = target.position;
+            enemy.aiAgent.SetDestination(targetPosition);
+        }
+    }
+
+    private bool PlayerCheck()
+    {
+        RaycastHit hit;
+        if(Physics.Raycast(enemy.transform.position, Vector3.forward, out hit, enemy.chaseDistance) && hit.collider.CompareTag("Player"))
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
 }
