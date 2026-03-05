@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class FPSController : MonoBehaviour
+public class PlayerMovement : MonoBehaviour
 {
     [Header("Movement")]
     public float moveSpeed = 6f;
