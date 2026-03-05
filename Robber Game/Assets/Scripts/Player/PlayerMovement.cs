@@ -50,10 +50,6 @@ public class FPSController : MonoBehaviour
         }
 
         // Jump
-        if (Input.GetKeyDown(KeyCode.Space) && controller.isGrounded)
-        {
-            velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
-        }
 
         // Gravity
         velocity.y += gravity * Time.deltaTime;
