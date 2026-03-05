@@ -2,25 +2,36 @@ using UnityEngine;
 
 public class PatrolState : EnemyStates
 {
-    public PatrolState(EnemyStateMachine stateMachine)
-        : base(stateMachine) { }
+    int currentPoint;
+
+    public PatrolState(EnemyStateMachine enemy) : base(enemy) { }
 
     public override void Enter()
     {
-        // Start patrolling
+        currentPoint = 0;
     }
 
     public override void Update()
     {
-        // Patrol logic here
+        Transform target = enemy.patrolPoints[currentPoint];
 
-        // Example transition:
-        // if (playerDetected)
-        //     stateMachine.ChangeState(stateMachine.ChaseState);
-    }
+        // Move toward patrol point
+        Vector3 dir = (target.position - enemy.transform.position).normalized;
+        enemy.rb.linearVelocity = new Vector3(dir.x * enemy.moveSpeed, enemy.rb.linearVelocity.y, dir.z * enemy.moveSpeed);
 
-    public override void Exit()
-    {
-        // Cleanup patrol
+        // If close to patrol point → go to next
+        if (Vector3.Distance(enemy.transform.position, target.position) < 1f)
+        {
+            currentPoint++;
+
+            if (currentPoint >= enemy.patrolPoints.Length)
+                currentPoint = 0;
+        }
+
+        // Detect player
+        if (enemy.DistanceToPlayer() < enemy.chaseDistance)
+        {
+            enemy.ChangeState(enemy.chaseState);
+        }
     }
 }

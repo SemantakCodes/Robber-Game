@@ -2,25 +2,23 @@ using UnityEngine;
 
 public class RestState : EnemyStates
 {
-    public RestState(EnemyStateMachine stateMachine)
-        : base(stateMachine) { }
+    float restTimer;
+
+    public RestState(EnemyStateMachine enemy) : base(enemy) { }
 
     public override void Enter()
     {
-        // Start resting
+        restTimer = 2f; // rest time
+        enemy.rb.linearVelocity = Vector3.zero;
     }
 
     public override void Update()
     {
-        // Rest logic
+        restTimer -= Time.deltaTime;
 
-        // Example:
-        // if (restFinished)
-        //     stateMachine.ChangeState(stateMachine.PatrolState);
-    }
-
-    public override void Exit()
-    {
-        // End rest
+        if (restTimer <= 0)
+        {
+            enemy.ChangeState(enemy.patrolState);
+        }
     }
 }

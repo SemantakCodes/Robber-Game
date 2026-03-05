@@ -1,37 +1,56 @@
 using UnityEngine;
 
+[RequireComponent(typeof(Rigidbody))]
 public class EnemyStateMachine : MonoBehaviour
 {
-    private EnemyStates currentState;
+    [Header("References")]
+    public Transform player;
+    public Transform[] patrolPoints;
 
-    // States
-    public PatrolState PatrolState { get; private set; }
-    public ChaseState ChaseState { get; private set; }
-    public RestState RestState { get; private set; }
+    [Header("Movement")]
+    public float moveSpeed = 3f;
+    public float chaseSpeed = 5f;
 
-    private void Awake()
+    [Header("Detection")]
+    public float chaseDistance = 8f;
+
+    [HideInInspector] public Rigidbody rb;
+
+    EnemyStates currentState;
+
+    public PatrolState patrolState;
+    public ChaseState chaseState;
+    public RestState restState;
+
+    void Awake()
     {
-        // Initialize states
-        PatrolState = new PatrolState(this);
-        ChaseState = new ChaseState(this);
-        RestState = new RestState(this);
+        rb = GetComponent<Rigidbody>();
+
+        patrolState = new PatrolState(this);
+        chaseState = new ChaseState(this);
+        restState = new RestState(this);
     }
 
-    private void Start()
+    void Start()
     {
-        ChangeState(PatrolState); // Default state
+        ChangeState(patrolState);
     }
 
-    private void Update()
+    void Update()
     {
         currentState?.Update();
     }
 
-    // Switch between states
     public void ChangeState(EnemyStates newState)
     {
         currentState?.Exit();
         currentState = newState;
         currentState?.Enter();
+    }
+
+    // Distance to player
+    public float DistanceToPlayer()
+    {
+        return Vector3.Distance(transform.position, player.position);
     }
 }
