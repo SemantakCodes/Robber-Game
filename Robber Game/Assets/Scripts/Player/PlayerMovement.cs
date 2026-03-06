@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class FPSController : MonoBehaviour
+public class PlayerMovement : MonoBehaviour
 {
     [Header("Movement")]
     public float moveSpeed = 6f;
@@ -31,9 +31,7 @@ public class FPSController : MonoBehaviour
 
     void Update()
     {
-        print("is grounded" + controller.isGrounded);
-        print("pressed" + Input.GetKeyDown(KeyCode.Space));
-        
+
         Move();
         MouseLook();
     }
@@ -50,6 +48,10 @@ public class FPSController : MonoBehaviour
         }
 
         // Jump
+        if (Input.GetKeyDown(KeyCode.Space) && controller.isGrounded)
+        {
+            velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+        }
 
         // Gravity
         velocity.y += gravity * Time.deltaTime;
