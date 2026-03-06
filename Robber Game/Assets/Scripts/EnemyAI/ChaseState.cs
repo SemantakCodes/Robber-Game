@@ -2,24 +2,27 @@ using UnityEngine;
 
 public class ChaseState : EnemyStates
 {
+    public float timer;
     public ChaseState(EnemyStateMachine enemy) : base(enemy) { }
 
     public override void Update()
     {
-        Vector3 dir = (enemy.player.position - enemy.transform.position).normalized;
-
-        enemy.rb.linearVelocity = new Vector3(dir.x * enemy.chaseSpeed, enemy.rb.linearVelocity.y, dir.z * enemy.chaseSpeed);
-
-        // If player escapes
-        if (enemy.DistanceToPlayer() > enemy.chaseDistance + 3f)
-        {
-            enemy.ChangeState(enemy.restState);
-        }
+        Chase();
         
     }
 
     private void Chase()
     {
-        
+        timer += Time.deltaTime;
+        enemy.aiAgent.SetDestination(enemy.player.position);
+        enemy.aiAgent.speed = enemy.chaseSpeed;
+        if(timer >= enemy.chaseTimer && enemy.aiAgent.remainingDistance >= enemy.leaveDistance)
+        {
+            enemy.ChangeState(enemy.restState);
+        }
+        if(timer <= enemy.chaseTimer && enemy.aiAgent.remainingDistance <= enemy.leaveDistance)
+        {
+            enemy.ChangeState(enemy.attackState);
+        }
     }
 }

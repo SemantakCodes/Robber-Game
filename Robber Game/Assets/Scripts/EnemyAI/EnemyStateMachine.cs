@@ -15,6 +15,8 @@ public class EnemyStateMachine : MonoBehaviour
 
     [Header("Detection")]
     public float chaseDistance = 8f;
+    public float chaseTimer;
+    public float leaveDistance;
 
     [HideInInspector] public Rigidbody rb;
 
@@ -23,6 +25,7 @@ public class EnemyStateMachine : MonoBehaviour
     public PatrolState patrolState;
     public ChaseState chaseState;
     public RestState restState;
+    public AttackState attackState;
 
     void Awake()
     {
