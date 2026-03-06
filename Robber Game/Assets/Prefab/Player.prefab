@@ -103,7 +103,7 @@ MonoBehaviour:
   currentSprintStamina: 0
   sprintDrainRate: 2
   sprintRegenRate: 1
-  mouseSensitivity: 100
+  mouseSensitivity: 150
   playerCamera: {fileID: 4997165625128034671}
 --- !u!1 &5721765392017604995
 GameObject:

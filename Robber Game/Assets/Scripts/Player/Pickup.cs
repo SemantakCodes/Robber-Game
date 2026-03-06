@@ -46,7 +46,7 @@ public class PlayerPickup : MonoBehaviour
     style.normal.textColor = Color.white;
 
     GUI.Label(
-        new Rect(Screen.width / 2 - 20, Screen.height / 2 - 20, 40, 40),
+        new Rect(Screen.width / 1.99999f - 20, Screen.height / 2 - 20, 40, 40),
         "+",
         style
     );
