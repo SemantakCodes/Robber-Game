@@ -41,7 +41,19 @@ public class PlayerMovement : MonoBehaviour
     {
         float x = Input.GetAxis("Horizontal");
         float z = Input.GetAxis("Vertical");
-    
+
+        // Check if grounded
+        if (controller.isGrounded && velocity.y < 0)
+        {
+            velocity.y = -2f;
+        }
+
+        // Jump
+        if (Input.GetKeyDown(KeyCode.Space) && controller.isGrounded)
+        {
+            velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+        }
+
         // Gravity
         velocity.y += gravity * Time.deltaTime;
 
